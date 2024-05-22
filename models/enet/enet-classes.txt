@@ -1,0 +1,17 @@
+Unlabeled
+Road
+Sidewalk
+Building
+Wall
+Fence
+Pole
+TrafficLight
+TrafficSign
+Vegetation
+Terrain
+Sky
+Person
+Rider
+Car
+Truck
+

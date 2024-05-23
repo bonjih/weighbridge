@@ -1,9 +1,8 @@
 {
     "input_video_path": "vids/GH020013_2024_05_16_11-50-50.mp4",
-    "output_video_path": "output/crusher_bin_bridge_4.mkv",
+    "output_video_path": "output/GH020013_2024_05_16_11-50-50.mp4",
     "output_image_path": "saved_frames/",
     "output_audit_path": "output/audit_data.csv",
-    "output_video": "output_video",
     "is_watching": true,
     "is_save_video": true,
     "offset": 34,

@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 import cv2
+import numpy as np
 import pandas as pd
 
 import global_params_variables
@@ -13,6 +14,14 @@ text_y = 25
 
 def timestamp(frame, ts):
     cv2.putText(frame, f"TS(s): {ts / 1000:.3f}", (10, text_y + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 1)
+
+
+def draw_optical_flow(raw_frame, magnitude, x, w, y, h, mean_angle):
+    # Draw the direction arrow
+    if magnitude.mean() > 1:  # Threshold to consider significant motion
+        end_point_x = int(x + w / 2 + 10 * np.cos(mean_angle))
+        end_point_y = int(y + h / 2 + 10 * np.sin(mean_angle))
+        cv2.arrowedLine(raw_frame, (x + w // 2, y + h // 2), (end_point_x, end_point_y), (0, 255, 0), 2)
 
 
 def draw_roi_poly(frame, roi_key, roi_points):
@@ -69,6 +78,7 @@ def save_results(truck_number, video_name):
     }
 
     df = pd.DataFrame(data, columns=["date", "truck_number", "video_name", "test_number"])
+
     df.to_csv(output_audit_path, index=False, mode='a', header=not os.path.exists(output_audit_path))
 
 

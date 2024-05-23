@@ -2,10 +2,9 @@ import cv2
 
 from RoiMultiClass import ComposeROI
 import global_params_variables
-from draw_label_print import print_results
+from utils import print_results, format_results, save_results
 from hf_mnist import predict_numbers
-from process_truck import process_images_dir, group_predictions_sort, thresholding
-from segmentation import Segmenter
+from process_truck import process_images_dir, group_predictions_sort
 from stream_video import VideoStreamer
 
 params = global_params_variables.ParamsDict()
@@ -31,7 +30,11 @@ def main():
     print('Running Prediction')
     predictions = predict_numbers(ROIs)
     predictions = group_predictions_sort(predictions)
-    print_results(predictions)
+
+    # results of prediction
+    results = format_results(predictions)
+    print_results(results)
+    save_results(results[0], video_path)
 
 
 if __name__ == "__main__":

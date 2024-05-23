@@ -2,7 +2,7 @@ import os
 import cv2
 import numpy as np
 
-from draw_label_print import timestamp, draw_roi_poly, is_truck_txt
+from utils import timestamp, draw_roi_poly, is_truck_txt
 from is_truck import TruckDetector
 from move_region_mask import RegionMasking
 from segmentation import Segmenter
@@ -65,8 +65,8 @@ class FrameProcessor:
                 # if  black is < 70 percent, save image for number prediction
                 segmenter = Segmenter(model_path, classes_path, colors_path)
                 pct, image = segmenter.process_images(raw_frame)
-                #print(img_name, pct)
-                if pct < 70:
+
+                if pct < segmentation_perc:
                     cv2.imwrite(img_path, image)
 
         return raw_frame

@@ -8,12 +8,11 @@
     "is_save_video": true,
     "offset": 34,
     "audit_results": true,
-    "motion_offset": 1,
-    "confidence_thres": 58,
+    "confidence_thres": 0.58,
+    "segmentation_perc": 70,
     "model_path": "models/enet/enet-model.net",
     "classes_path": "models/enet/enet-classes.txt",
     "colors_path": "models/enet/enet-colors.txt",
-    "segmentation_perc": 70,
 
     "roi_coords": {
         "roi_1": {
@@ -36,20 +35,5 @@
             "x4": 207,
             "y4": 868
             }
-
-
-    },
-    "thresholds": {
-        "daytime": {
-            "sum_features": 13,
-            "max_window_val": 10
-        }
-    },
-        "dust": {
-            "size": 60,
-            "thresh": 2
-    },
-    "change_window": {
-            "size": 10
     }
 }

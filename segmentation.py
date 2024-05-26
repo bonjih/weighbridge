@@ -38,7 +38,7 @@ class Segmenter:
         return cv2.dnn.readNet(self.model_path)
 
     def perform_segmentation(self, image):
-        blob = cv2.dnn.blobFromImage(image, 1 / 255.0, (512, 256), 0, swapRB=True, crop=False)
+        blob = cv2.dnn.blobFromImage(image, 1 / 255.0, (1024, 512), 0, swapRB=True, crop=False)
         self.net.setInput(blob)
         return self.net.forward()
 

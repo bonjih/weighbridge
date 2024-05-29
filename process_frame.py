@@ -2,10 +2,11 @@ import os
 import cv2
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
+import concurrent.futures
+
 from object_direction import calculate_optical_flow
 from ocr_main import _ocr
-from process_truck import process_images_dir
-from utils import group_predictions_sort, truck_number, truck_direction, draw_roi_poly
+from utils import truck_number, truck_direction, draw_roi_poly
 from utils import timestamp, format_results, save_results
 from is_truck import TruckDetector
 from object_region_mask import RegionMasking
@@ -25,17 +26,14 @@ t_name = []
 pct_list = []
 
 
-def func_call():
-    ROIs = process_images_dir("saved_frames")
-    print('Running Prediction')
-    predictions = predict_numbers(ROIs)
-    predictions = group_predictions_sort(predictions)
-    print('Formatting / Saving Results')
-    try:
-        results = format_results(predictions)
-        save_results(results[0], input_video_path, direction_list)
-    except Exception as e:
-        print('No results generated:', e)
+# crop to get a zoom
+def crop(img):
+    height, width, _ = img.shape
+    left_half_image = img[:, :width // 2]
+    half_height = height // 2
+    top_half_image = left_half_image[:half_height, :]
+
+    return top_half_image
 
 
 class FrameProcessor:
@@ -43,33 +41,33 @@ class FrameProcessor:
         self.roi_comp = roi_comp
         self.truck_detected = False
         self.directions = {}
-        self.ocr_results = {}
         self.model_path = model_path
         self.classes_path = classes_path
         self.colors_path = colors_path
         self.output_image_path = output_image_path
         os.makedirs(self.output_image_path, exist_ok=True)
-        self.executor = ThreadPoolExecutor(max_workers=4)
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+        self.segmentation_future = None
 
-    def segment_image(self, raw_frame, frame_index, roi_key):  # to segment while streaming video
+    def stop_segmentation(self):
+        if self.segmentation_future is not None:
+            self.segmentation_future.cancel()
+
+    def segment_image(self, raw_frame, frame_index):
         segmenter = Segmenter(self.model_path, self.classes_path, self.colors_path)
-
         pct, image = segmenter.process_images(raw_frame)
+        image = crop(image)
         pct_list.append(pct)
-
         pct_list.sort()
-
-        if pct_list:
-            if pct <= min(pct_list):  # get the min pct, min is the img to process
-                img_name = f"frame_{frame_index}.jpg"
-                img_path = os.path.join(self.output_image_path, img_name)
-                cv2.imwrite(img_path, image)
-                _, ocr_result = _ocr(raw_frame)
-                self.ocr_results[frame_index] = ocr_result
-
-                t_name.append(ocr_result)
-                direction_list.append(self.directions[frame_index])
-                return raw_frame
+        print(pct)
+        if pct < 91:
+            img_name = f"frame_{frame_index}.jpg"
+            img_path = os.path.join(self.output_image_path, img_name)
+            cv2.imwrite(img_path, image)
+            _, ocr_result = _ocr(raw_frame)
+            t_name.append(ocr_result)
+            direction_list.append(self.directions[frame_index])
+            save_results(t_name, input_video_path, direction_list)
 
     def process_frame(self, raw_frame, prev_frame, frame_height, frame_width, ts, back, frame_index):
         timestamp(raw_frame, ts)
@@ -93,21 +91,27 @@ class FrameProcessor:
 
             if is_truck:
                 truck_detected_in_frame = True
+                frame_index_wait = frame_index + 120  # wait some frames after is_truck then process
 
-                if roi_key == 'roi_1':  # Motion towards the right of the screen
+                if roi_key == 'roi_1':
                     direction = "Truck Out: "
                     truck_direction(raw_frame, direction)
-                elif roi_key == 'roi_2':  # Motion towards the top of the screen
+                elif roi_key == 'roi_2':
                     direction = "Truck In: "
                     truck_direction(raw_frame, direction)
 
-                    self.directions[frame_index] = direction
+                    self.directions[frame_index_wait] = direction
 
-                if frame_index % 30 == 0:
-                    self.executor.submit(self.segment_image, raw_frame, frame_index, roi_key)
+                if frame_index_wait % 30 == 0:
+                    print(f"Truck detected in frame {frame_index_wait}, segmenting.")
+                    self.executor.submit(self.segment_image, raw_frame, frame_index_wait)
 
-                truck_number(raw_frame, t_name)
+            truck_number(raw_frame, t_name)
+
+        # stop the segmentation thread when truck is not in ROI
+        if not truck_detected_in_frame:
+            self.stop_segmentation()
+            return raw_frame
 
         self.truck_detected = truck_detected_in_frame
-
         return raw_frame

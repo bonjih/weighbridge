@@ -2,7 +2,6 @@ import cv2
 
 from RoiMultiClass import ComposeROI
 import global_params_variables
-from process_frame import func_call
 from stream_video import VideoStreamer
 from utils import clear_directory
 
@@ -12,6 +11,7 @@ video_path = configs.video_file
 offset = params.get_value('offset')  # start video at a ts
 is_save_video = params.get_value('is_save_video')
 output_roi_path = params.get_value('output_roi_path')
+output_image_path = params.get_value('output_image_path')
 
 
 def run():
@@ -23,13 +23,11 @@ def run():
             break
 
 
+#
 def main():
     print('Processing Video')
     run()
-    print('Saving / Segmenting images')
-    func_call()
-
-    clear_directory(output_roi_path)
+    # clear_directory(output_image_path)
 
 
 if __name__ == "__main__":

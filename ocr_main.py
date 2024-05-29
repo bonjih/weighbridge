@@ -1,9 +1,7 @@
 import os
 
-import cv2
-
 from ocr_e.ocr import OCR
-from utils import group_predictions_sort, truck_number
+from utils import group_predictions_sort
 import global_params_variables
 
 params = global_params_variables.ParamsDict()
@@ -25,12 +23,13 @@ def _ocr(raw_frame):
         grouped_predictions = group_predictions_sort(text_list[-1])
 
         for group in grouped_predictions:
-            predictions_only = [prediction[2] for prediction in group]
-            # assume if group < 2, nothing to do
-            if any('.' in pred for pred in predictions_only) or len(predictions_only) < 2:
+            predictions = [prediction[2] for prediction in group]
+
+            # assume if group < 2, not a txt
+            if any('.' in pred for pred in predictions) or len(predictions) < 2:
                 continue
 
-            concatenated_predictions = ''.join(predictions_only)
-
+            concatenated_predictions = ''.join(predictions)
+            print(concatenated_predictions)
             if concatenated_predictions[0].isalpha() and concatenated_predictions[-1].isdigit():
                 return raw_frame, concatenated_predictions

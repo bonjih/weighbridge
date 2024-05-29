@@ -40,16 +40,10 @@ def format_results(predictions):
             return [trunck_num, group_str]
 
 
-def print_results(results):
-    print(results[0])
-    print()
-    print(results[1])
-
-
 def save_results(truck_number, video_name, direction):
     output_dir = os.path.dirname(output_audit_path)
     os.makedirs(output_dir, exist_ok=True)
-    print(direction)
+
     if os.path.exists(output_audit_path):
         # Read the existing CSV file to find the latest test number
         df_existing = pd.read_csv(output_audit_path)
@@ -63,16 +57,17 @@ def save_results(truck_number, video_name, direction):
     test_number = last_test_number + 1
     test_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    data = {
-        "date": [test_time],
-        "truck_number": [truck_number],
-        "video_name": [video_name],  # file name, assuming test vids are mp4's
-        "test_number": [test_number],
-        "truck_direction": [direction[0]]
-    }
+    if direction:
+        data = {
+            "date": [test_time],
+            "truck_number": [truck_number],
+            "video_name": [video_name],  # file name, assuming test vids are mp4's
+            "test_number": [test_number],
+            "truck_direction": [direction[0]]
+        }
 
-    df = pd.DataFrame(data, columns=["date", "truck_number", "video_name", "test_number", "truck_direction"])
-    df.to_csv(output_audit_path, index=False, mode='a', header=not os.path.exists(output_audit_path))
+        df = pd.DataFrame(data, columns=["date", "truck_number", "video_name", "test_number", "truck_direction"])
+        df.to_csv(output_audit_path, index=False, mode='a', header=not os.path.exists(output_audit_path))
 
 
 def group_predictions_sort(predictions):

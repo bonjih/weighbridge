@@ -63,7 +63,7 @@ class OCR:
                  enable_cuda=True,
                  batch_size=8,
                  text_threshold=0.5,
-                 link_threshold=0.1,
+                 link_threshold=0.3,
                  low_text=0.3,
                  details=2,
                  lang=None,

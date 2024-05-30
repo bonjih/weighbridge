@@ -48,6 +48,7 @@ def write_results(image, frame_index, raw_frame):
         img_name = f"frame_{frame_index}.jpg"
         img_path = os.path.join(output_image_path, img_name)
         cv2.imwrite(img_path, image)
+        print(type(raw_frame))
         _, ocr_result = _ocr(raw_frame)
         t_name.append(ocr_result)
         save_results(t_name, input_video_path, direction_list)
@@ -69,7 +70,7 @@ class FrameProcessor:
         if self.segmentation_future is not None:
             self.segmentation_future.cancel()
 
-    def segment_image(self, raw_frame, frame_index, roi_key):
+    def segment_image(self, raw_frame, roi_key):
         segmenter = Segmenter(self.model_path, self.classes_path, self.colors_path)
         pct, image = segmenter.process_images(raw_frame)
         image = crop(image, roi_key)
@@ -121,7 +122,7 @@ class FrameProcessor:
 
                 if frame_index % 30 == 0:
                     if frame_index > truck_wait:
-                        future = self.executor.submit(self.segment_image, raw_frame, frame_index, roi_key)
+                        future = self.executor.submit(self.segment_image, raw_frame, roi_key)
                         pct, img = future.result()
                         pct_list.append(pct)
                         pct_list.sort()

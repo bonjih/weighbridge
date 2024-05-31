@@ -65,7 +65,7 @@ class VideoStreamer(object):
                     frame_height = int(self.cap.get(4))
                     fps = self.cap.get(cv2.CAP_PROP_FPS)
                     fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # For MP4 format
-                    self.output_path = f"{output_video_path}/{self.cam_name}.mp4"
+                    self.output_path = f"{output_video_path}/{self.cam_name}_output.mp4"
                     self.writer = cv2.VideoWriter(self.output_path, fourcc, fps, (frame_width, frame_height))
                 self.writer.write(frame)
             #time.sleep(0.01)

@@ -110,9 +110,9 @@ class FrameProcessor:
                     first_frame_index_list.append(frame_index)
 
                 if roi_key == 'roi_1':
-                    truck_wait = first_frame_index_list[0] + 600
+                    truck_wait = first_frame_index_list[0] + 600  # a wait  period after is_truck, reduce noise
                 else:
-                    truck_wait = first_frame_index_list[0] + 300
+                    truck_wait = first_frame_index_list[0] + 200  # a wait  period after is_truck, reduce noise
 
                 if frame_index % 30 == 0:
                     if frame_index > truck_wait:

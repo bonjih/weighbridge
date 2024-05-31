@@ -43,17 +43,6 @@ def crop(img, roi_key):
     return top_half_image
 
 
-# TODO move to utils
-def write_results(image, frame_index, raw_frame):
-        img_name = f"frame_{frame_index}.jpg"
-        img_path = os.path.join(output_image_path, img_name)
-        cv2.imwrite(img_path, image)
-        print(type(raw_frame))
-        _, ocr_result = _ocr(raw_frame)
-        t_name.append(ocr_result)
-        save_results(t_name, input_video_path, direction_list)
-
-
 class FrameProcessor:
     def __init__(self, roi_comp):
         self.roi_comp = roi_comp
@@ -70,18 +59,24 @@ class FrameProcessor:
         if self.segmentation_future is not None:
             self.segmentation_future.cancel()
 
-    def segment_image(self, raw_frame, roi_key):
+    def segment_image(self, raw_frame, frame_index, roi_key):
         segmenter = Segmenter(self.model_path, self.classes_path, self.colors_path)
         pct, image = segmenter.process_images(raw_frame)
         image = crop(image, roi_key)
+        pct_list.append(pct)
+        pct_list.sort()
 
-        return pct, image
+        if pct < pct_list[1]:
+            img_name = f"frame_{frame_index}.jpg"
+            img_path = os.path.join(self.output_image_path, img_name)
+            cv2.imwrite(img_path, image)
+            _, ocr_result = _ocr(raw_frame)
+            t_name.append(ocr_result)
+            save_results(t_name, input_video_path, direction_list)
 
     def process_frame(self, raw_frame, prev_frame, frame_height, frame_width, ts, back, frame_index):
         timestamp(raw_frame, ts)
         truck_detected_in_frame = False
-        img = None
-        pct = 0
 
         for roi_key in self.roi_comp.rois:
             roi = self.roi_comp.rois[roi_key]
@@ -107,14 +102,13 @@ class FrameProcessor:
                 else:
                     direction = "Truck In"
 
-                truck_direction(raw_frame, direction)  # to put direction to video
+                truck_direction(raw_frame, direction)  # to add direction to video
                 direction_list.append(direction)
 
-                # store the index of the first frame where a truck is detected
+                # store the index of the first frame when is_truck
                 if not first_frame_index_list:
                     first_frame_index_list.append(frame_index)
 
-                # a frame delay from when the truck is at the gate (ROI) th haulage, reduces unnecessary segmentation
                 if roi_key == 'roi_1':
                     truck_wait = first_frame_index_list[0] + 600
                 else:
@@ -122,20 +116,11 @@ class FrameProcessor:
 
                 if frame_index % 30 == 0:
                     if frame_index > truck_wait:
-                        future = self.executor.submit(self.segment_image, raw_frame, roi_key)
-                        pct, img = future.result()
-                        pct_list.append(pct)
-                        pct_list.sort()
-
-            if img is not None and not self.truck_detected:
-                if roi_key == 'roi_1' and pct < 70:
-                    write_results(img, frame_index, raw_frame)
-                elif roi_key == 'roi_2' and pct < 91:
-                    write_results(img, frame_index, raw_frame)
+                        self.executor.submit(self.segment_image, raw_frame, frame_index, roi_key)
 
             truck_number(raw_frame, t_name)
 
-        # stop the segmentation thread but don't reset the first detected frame index when truck is not in ROI
+        # Stop the segmentation thread but don't reset the first detected frame index when truck is not in ROI
         if not truck_detected_in_frame:
             self.stop_segmentation()
             return raw_frame
